@@ -1,4 +1,4 @@
-# app.py - AgriAgent with Fixed Weather & Modern UI
+# app.py - AgriAgent (UI FIXED)
 import streamlit as st
 import google.generativeai as genai
 import requests
@@ -12,8 +12,8 @@ from config import *
 st.set_page_config(
     page_title="AgriAgent - AI Agriculture Assistant",
     page_icon="🌾",
-    
-    
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # ==================== MODERN CHATBOT UI ====================
@@ -28,7 +28,6 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Dark background */
     .main {
         background: #0f1419;
         min-height: 100vh;
@@ -40,15 +39,12 @@ st.markdown("""
         max-width: 100% !important;
     }
     
-    /* Chat container */
     .chat-container {
         max-width: 850px;
         margin: 0 auto;
         padding: 100px 20px 160px 20px;
-        
     }
     
-    /* Welcome message */
     .welcome-message {
         text-align: center;
         padding: 40px 20px;
@@ -63,7 +59,6 @@ st.markdown("""
         margin-bottom: 12px;
     }
     
-    /* Message bubbles */
     .message-container {
         display: flex;
         margin-bottom: 16px;
@@ -101,7 +96,6 @@ st.markdown("""
         border: 1px solid #30363d;
     }
     
-    /* Input area */
     .input-container {
         position: fixed;
         bottom: 0;
@@ -118,18 +112,16 @@ st.markdown("""
         margin: 0 auto;
         display: flex;
         gap: 10px;
-        align-items: center;
-        position: relative;
+        align-items: flex-end;
     }
     
-    /* Text input */
     .stTextInput {
         flex: 1;
     }
     
     .stTextInput > div > div > input {
         border-radius: 24px !important;
-        padding: 13px 90px 13px 20px !important;
+        padding: 13px 20px !important;
         border: 1px solid #30363d !important;
         font-size: 15px !important;
         background: #1c2128 !important;
@@ -146,87 +138,269 @@ st.markdown("""
         color: #8b98a5 !important;
     }
     
-    /* Upload button styling */
-    .upload-btn {
-        position: absolute;
-        right: 65px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: transparent;
-        border: none;
-        color: #8b98a5;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 6px;
-        border-radius: 8px;
-        transition: all 0.2s;
-        z-index: 10;
-    }
-    
-    .upload-btn:hover {
-        color: #667eea;
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    /* Hide file uploader visuals */
-    [data-testid="stFileUploader"] {
-        position: absolute;
-        right: 60px;
-        top: 0;
-        width: 40px;
-        height: 48px;
-        opacity: 0;
-        cursor: pointer;
-    }
-    
-    [data-testid="stFileUploader"] section {
-        display: none;
-    }
-    
-    /* Clear button */
     .stButton > button {
         border-radius: 50% !important;
-        width: 42px !important;
-        height: 42px !important;
+        width: 46px !important;
+        height: 46px !important;
+        min-height: 46px !important;
         padding: 0 !important;
-        font-size: 16px !important;
+        font-size: 20px !important;
         border: 1px solid #30363d !important;
         background: #1c2128 !important;
         color: #8b98a5 !important;
         transition: all 0.2s !important;
+        cursor: pointer !important;
     }
     
     .stButton > button:hover {
         background: #21262d !important;
         border-color: #484f58 !important;
         color: #e6edf3 !important;
+        transform: scale(1.05);
     }
     
-    /* Upload badge */
+    /* Fixed File Uploader Styling */
+    .upload-button-wrapper {
+        position: relative;
+        width: 46px;
+        height: 46px;
+    }
+    
+    [data-testid="stFileUploadDropzone"] {
+        display: none !important;
+    }
+    
+    [data-testid="stFileUploaderDeleteBtn"] {
+        display: none !important;
+    }
+    
+    .stFileUploader {
+        width: 46px !important;
+        height: 46px !important;
+    }
+    
+    .stFileUploader > div {
+        width: 46px !important;
+        height: 46px !important;
+    }
+    
+    .stFileUploader label {
+        border-radius: 50% !important;
+        width: 46px !important;
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 0 !important;
+        border: 1px solid #30363d !important;
+        background: #1c2128 !important;
+        color: #8b98a5 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        font-size: 20px !important;
+        margin: 0 !important;
+    }
+    
+    .stFileUploader label:hover {
+        background: #21262d !important;
+        border-color: #484f58 !important;
+        color: #e6edf3 !important;
+        transform: scale(1.05);
+    }
+    
+    .stFileUploader label span {
+        display: none !important;
+    }
+    
+    .stFileUploader label div {
+        display: none !important;
+    }
+    
+    .stFileUploader label::before {
+        content: "📎";
+        font-size: 20px;
+        display: block;
+    }
+    
+    .stFileUploader section {
+        padding: 0 !important;
+        border: none !important;
+    }
+    
     .upload-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        background: #667eea;
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border-radius: 12px;
+        border-radius: 20px;
         font-size: 13px;
         font-weight: 500;
-        margin-top: 8px;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        animation: slideUp 0.3s ease;
+        z-index: 1001;
     }
     
-    /* Hide streamlit */
+    @keyframes slideUp {
+        from { 
+            opacity: 0; 
+            transform: translateX(-50%) translateY(10px); 
+        }
+        to { 
+            opacity: 1; 
+            transform: translateX(-50%) translateY(0); 
+        }
+    }
+    
     #MainMenu, footer, header {visibility: hidden;}
     div[data-testid="stToolbar"] {display: none;}
     
-    /* Responsive */
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background: #0f1419 !important;
+        border-right: 1px solid #30363d !important;
+        z-index: 999 !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        background: #0f1419 !important;
+        padding-top: 20px !important;
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
+        color: #e6edf3 !important;
+    }
+    
+    [data-testid="stSidebar"] .stMetric {
+        background: #1c2128 !important;
+        padding: 12px !important;
+        border-radius: 8px !important;
+        border: 1px solid #30363d !important;
+    }
+    
+    [data-testid="stSidebar"] .stMetric label {
+        color: #8b98a5 !important;
+    }
+    
+    [data-testid="stSidebar"] .stMetric [data-testid="stMetricValue"] {
+        color: #e6edf3 !important;
+    }
+    
+    /* Sidebar Toggle Button */
+    button[kind="header"] {
+        background: #1c2128 !important;
+        color: #8b98a5 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 8px !important;
+        z-index: 1000 !important;
+    }
+    
+    button[kind="header"]:hover {
+        background: #21262d !important;
+        color: #e6edf3 !important;
+        border-color: #484f58 !important;
+    }
+    
+    /* Make sidebar visible when collapsed */
+    [data-testid="collapsedControl"] {
+        background: #1c2128 !important;
+        color: #e6edf3 !important;
+        border: 1px solid #30363d !important;
+        margin-top: 80px !important;
+        z-index: 1000 !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    [data-testid="collapsedControl"]:hover {
+        background: #667eea !important;
+        color: #fff !important;
+        border-color: #667eea !important;
+        transform: scale(1.1);
+    }
+    
+    [data-testid="collapsedControl"] svg {
+        fill: currentColor !important;
+    }
+    
+    /* Hide Streamlit's default file uploader text */
+    .uploadedFile {
+        display: none !important;
+    }
+    
+    /* Image display in chat */
+    .stImage {
+        margin-top: 8px;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    /* Header responsive */
+    .app-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 998;
+        background: #0f1419;
+        padding: 16px 20px;
+        border-bottom: 1px solid #30363d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .app-header h1 {
+        font-size: 1.8em;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+    }
+    
+    .app-header p {
+        color: #8b98a5;
+        font-size: 0.9em;
+        margin: 4px 0 0 0;
+    }
+    
     @media (max-width: 768px) {
         .message-bubble {
             max-width: 85%;
         }
         .chat-container {
             padding: 90px 12px 150px 12px;
+        }
+        .input-wrapper {
+            gap: 8px;
+        }
+        .stButton > button,
+        .stFileUploader label {
+            width: 42px !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 18px !important;
+        }
+        .app-header h1 {
+            font-size: 1.4em;
+        }
+        .app-header p {
+            font-size: 0.8em;
+        }
+        .app-header {
+            padding: 12px 16px;
+        }
+        .chat-container {
+            padding-top: 80px;
+        }
+        [data-testid="collapsedControl"] {
+            margin-top: 70px !important;
         }
     }
 </style>
@@ -241,13 +415,16 @@ def initialize_session_state():
         "last_location": None,
         "processed_input": None,
         "input_counter": 0,
+        "greeting_done": False,
+        "location_asked": False,
         "context": {
             "location": None,
             "soil_type": None,
             "water_source": None,
             "budget": None,
             "experience": None,
-            "farm_size": None
+            "farm_size": None,
+            "active_farming": True
         }
     }
     
@@ -286,31 +463,35 @@ def extract_context_from_history():
         if msg["role"] == "user":
             content_lower = msg["content"].lower()
             
-            # Expanded location detection
+            if any(phrase in content_lower for phrase in ["not growing", "giving time", "break", "replenish", "taking season off"]):
+                context["active_farming"] = False
+            
             location_keywords = ["maharashtra", "punjab", "karnataka", "gujarat", "rajasthan", 
                                "mp", "up", "bihar", "jammu", "kashmir", "j&k", "jk", "amravati", 
-                               "mumbai", "pune", "srinagar", "jammu city", "delhi", "bangalore"]
+                               "mumbai", "pune", "srinagar", "delhi", "bangalore"]
             
             if not context["location"]:
                 for keyword in location_keywords:
                     if keyword in content_lower:
-                        context["location"] = msg["content"]
+                        context["location"] = keyword
                         break
             
-            if not context["soil_type"] and any(word in content_lower for word in ["clay", "sand", "loam", "soil"]):
-                context["soil_type"] = msg["content"]
+            if not context["soil_type"] and any(word in content_lower for word in ["clay", "sand", "loam", "soil", "between"]):
+                context["soil_type"] = content_lower
             
             if not context["water_source"] and any(word in content_lower for word in ["rain", "irrigation", "well", "canal"]):
-                context["water_source"] = msg["content"]
+                context["water_source"] = content_lower
             
             if not context["budget"] and any(word in content_lower for word in ["budget", "money", "lakh", "investment"]):
-                context["budget"] = msg["content"]
+                context["budget"] = content_lower
             
-            if not context["farm_size"] and any(word in content_lower for word in ["acre", "hectare"]):
-                context["farm_size"] = msg["content"]
+            if not context["farm_size"] and any(word in content_lower for word in ["acre", "hectare", "farm"]):
+                numbers = re.findall(r'\d+', content_lower)
+                if numbers:
+                    context["farm_size"] = f"{numbers[0]} acres"
             
             if not context["experience"] and any(word in content_lower for word in ["beginner", "new", "experienced"]):
-                context["experience"] = msg["content"]
+                context["experience"] = "beginner" if "beginner" in content_lower or "new" in content_lower else "experienced"
     
     st.session_state.context = context
     return context
@@ -321,8 +502,11 @@ def is_simple_greeting(message: str) -> bool:
     
     message_lower = message.lower().strip()
     
-    if message_lower in greetings or any(phrase in message_lower for phrase in casual):
-        if len(message_lower) < 30:
+    if message_lower in greetings:
+        return True
+    
+    for phrase in casual:
+        if phrase in message_lower and len(message_lower) < 25:
             return True
     
     return False
@@ -333,40 +517,23 @@ def remove_markdown_formatting(text: str) -> str:
     return text
 
 def extract_location_from_query(query: str) -> Optional[str]:
-    """Extract city/state name with better matching for states like J&K"""
-    # City-level locations
     cities = ["mumbai", "delhi", "bangalore", "hyderabad", "chennai", "kolkata", "pune", 
               "ahmedabad", "jaipur", "lucknow", "nagpur", "indore", "bhopal", "patna", 
-              "amravati", "nashik", "aurangabad", "solapur", "srinagar", "jammu"]
+              "amravati", "nashik", "srinagar", "jammu"]
     
-    # State-level locations (will use capital city)
     states_to_cities = {
-        "maharashtra": "mumbai",
-        "punjab": "chandigarh",
-        "karnataka": "bangalore",
-        "gujarat": "ahmedabad",
-        "rajasthan": "jaipur",
-        "mp": "bhopal",
-        "madhya pradesh": "bhopal",
-        "up": "lucknow",
-        "uttar pradesh": "lucknow",
-        "bihar": "patna",
-        "jammu": "jammu",
-        "kashmir": "srinagar",
-        "j&k": "srinagar",
-        "jk": "srinagar",
-        "jammu and kashmir": "srinagar",
-        "jammu kashmir": "srinagar"
+        "maharashtra": "mumbai", "punjab": "chandigarh", "karnataka": "bangalore",
+        "gujarat": "ahmedabad", "rajasthan": "jaipur", "mp": "bhopal",
+        "up": "lucknow", "bihar": "patna", "jammu": "jammu", "kashmir": "srinagar",
+        "j&k": "srinagar", "jk": "srinagar"
     }
     
     query_lower = query.lower()
     
-    # Check for cities first
     for city in cities:
         if city in query_lower:
             return city.title()
     
-    # Check for states and return capital
     for state, capital in states_to_cities.items():
         if state in query_lower:
             return capital.title()
@@ -374,11 +541,9 @@ def extract_location_from_query(query: str) -> Optional[str]:
     return None
 
 def get_weather_data(location: str) -> Optional[Dict[str, Any]]:
-    """Improved weather fetching with better error handling"""
     if not WEATHER_API_KEY:
         return None
     
-    # Check cache
     if (st.session_state.weather_data and 
         st.session_state.last_location and
         st.session_state.last_location.lower() == location.lower() and
@@ -387,14 +552,8 @@ def get_weather_data(location: str) -> Optional[Dict[str, Any]]:
         return st.session_state.weather_data
     
     try:
-        # Try with India country code for better results
         url = "https://api.openweathermap.org/data/2.5/weather"
-        params = {
-            "q": f"{location},IN",  # Add India country code
-            "appid": WEATHER_API_KEY,
-            "units": WEATHER_UNITS
-        }
-        
+        params = {"q": f"{location},IN", "appid": WEATHER_API_KEY, "units": WEATHER_UNITS}
         response = requests.get(url, params=params, timeout=WEATHER_TIMEOUT)
         
         if response.status_code == 200:
@@ -403,19 +562,8 @@ def get_weather_data(location: str) -> Optional[Dict[str, Any]]:
             st.session_state.weather_cache_time = datetime.now()
             st.session_state.last_location = location
             return data
-        else:
-            # Try without country code
-            params = {"q": location, "appid": WEATHER_API_KEY, "units": WEATHER_UNITS}
-            response = requests.get(url, params=params, timeout=WEATHER_TIMEOUT)
-            
-            if response.status_code == 200:
-                data = response.json()
-                st.session_state.weather_data = data
-                st.session_state.weather_cache_time = datetime.now()
-                st.session_state.last_location = location
-                return data
-    except Exception as e:
-        print(f"Weather API error: {e}")
+    except:
+        pass
     
     return None
 
@@ -427,20 +575,8 @@ def format_weather_context(weather_data: Dict[str, Any]) -> str:
         temp = weather_data['main']['temp']
         humidity = weather_data['main']['humidity']
         description = weather_data['weather'][0]['description']
-        wind_speed = weather_data['wind']['speed']
         
-        context = f"Weather in {weather_data['name']}: {temp}°C, {humidity}% humidity, {description}, wind {wind_speed} m/s."
-        
-        if temp > 35:
-            context += " High heat - extra irrigation recommended."
-        elif temp < 10:
-            context += " Cold - frost protection needed."
-        
-        if humidity > 80:
-            context += " High humidity - disease risk."
-        elif humidity < 30:
-            context += " Low humidity - increase irrigation."
-        
+        context = f"Weather: {temp}°C, {humidity}% humidity, {description}."
         return context
     except:
         return ""
@@ -455,19 +591,18 @@ def analyze_images_with_gemini(images: List[Image.Image], query: str = "") -> st
         model = genai.GenerativeModel(GEMINI_VISION_MODEL)
         season = get_indian_season()
         
-        prompt = f"""You are AgriAgent, agricultural expert.
+        prompt = f"""Agricultural expert analysis.
 
 Season: {season}
 Query: "{query}"
 
-Analyze {"these images" if len(images) > 1 else "this image"}:
+Analyze {"these images" if len(images) > 1 else "this image"} and provide:
+1. What crop/plant
+2. Health condition
+3. Any diseases/pests
+4. Recommendations
 
-1. Identification: What crops/plants?
-2. Health: Condition
-3. Issues: Diseases, pests
-4. Recommendations: Actions (products, dosages)
-
-Max {MAX_RESPONSE_LENGTH} words. No bold (**). Simple language."""
+Max {MAX_RESPONSE_LENGTH} words. Conversational tone."""
         
         content_parts = [prompt] + [resize_image(img) for img in images]
         
@@ -475,15 +610,15 @@ Max {MAX_RESPONSE_LENGTH} words. No bold (**). Simple language."""
             content_parts,
             generation_config=genai.types.GenerationConfig(
                 max_output_tokens=IMAGE_ANALYSIS_MAX_TOKENS,
-                temperature=TEMPERATURE_IMAGE_ANALYSIS,
+                temperature=0.7,
             )
         )
         
-        result = response.text if response and response.text else "Unable to analyze images."
+        result = response.text if response and response.text else "Unable to analyze."
         return remove_markdown_formatting(result)
     
     except Exception as e:
-        return f"Error: {str(e)[:100]}"
+        return f"Error analyzing image: {str(e)[:100]}"
 
 def get_agriculture_response(user_message: str, weather_context: str = "", image_analysis: str = "") -> str:
     try:
@@ -494,88 +629,116 @@ def get_agriculture_response(user_message: str, weather_context: str = "", image
         seasonal_crops = SEASONAL_CROPS.get(current_season, [])
         
         context = extract_context_from_history()
-        has_enough_context = bool(context["location"] and context["soil_type"] and context["water_source"])
         
-        conversation_history = ""
-        if len(st.session_state.messages) > 1:
-            recent = st.session_state.messages[-8:]
-            history_parts = []
-            for msg in recent:
-                role = "Farmer" if msg["role"] == "user" else "Agent"
-                content = msg['content'][:100]
-                history_parts.append(f"{role}: {content}")
-            conversation_history = "\n".join(history_parts)
-        
-        if is_greeting:
-            system_prompt = """You are AgriAgent, AI agricultural assistant.
+        if not context["active_farming"]:
+            system_prompt = f"""You are AgriAgent, friendly agricultural consultant.
 
-Simple greeting.
+The farmer mentioned they're not planting this season - they want to let soil recover.
 
 RULES:
-- 30-50 words
-- Warm and brief
-- No bold (**)
-- Just greet, ask how to help"""
+1. Support their decision - it's smart
+2. Give 2-3 tips on soil health/cover crops for {current_season}
+3. NO questions about location
+4. Keep it brief ({MIN_RESPONSE_LENGTH}-{MAX_RESPONSE_LENGTH} words)
+5. Conversational, encouraging tone
+6. If they clearly don't want farming advice, just chat naturally
+
+Previous conversation:
+{conversation_history if len(st.session_state.messages) > 1 else "Just started"}"""
         
-        elif has_enough_context:
-            system_prompt = f"""You are AgriAgent, expert consultant.
+        elif is_greeting and not st.session_state.greeting_done:
+            st.session_state.greeting_done = True
+            system_prompt = """You are AgriAgent, friendly agricultural assistant.
+
+First greeting.
+
+RULES:
+- 25-40 words only
+- Warm greeting
+- Ask what they're growing or planning
+- Natural, conversational"""
+        
+        else:
+            conversation_history = ""
+            if len(st.session_state.messages) > 1:
+                recent = st.session_state.messages[-6:]
+                history_parts = []
+                for msg in recent:
+                    role = "Farmer" if msg["role"] == "user" else "Agent"
+                    content = msg['content'][:80]
+                    history_parts.append(f"{role}: {content}")
+                conversation_history = "\n".join(history_parts)
+            
+            known_count = sum([1 for v in [context["location"], context["soil_type"], context["water_source"]] if v])
+            
+            if known_count >= 2 or context["location"]:
+                system_prompt = f"""You are AgriAgent, experienced consultant.
 
 Farmer Context:
-- Location: {context.get('location', 'Not specified')}
-- Soil: {context.get('soil_type', 'Not specified')}
-- Water: {context.get('water_source', 'Not specified')}
-- Farm: {context.get('farm_size', 'Not specified')}
-- Budget: {context.get('budget', 'Not specified')}
+- Location: {context.get('location', 'Unknown')}
+- Soil: {context.get('soil_type', 'Mixed')}
+- Water: {context.get('water_source', 'Unknown')}
+- Farm: {context.get('farm_size', 'Unknown')}
 - Season: {current_season}
 - Crops: {', '.join(seasonal_crops[:4])}
 
 RULES:
-1. Give RECOMMENDATIONS now
+1. Give 2-3 crop recommendations with costs/returns
 2. Max {MAX_RESPONSE_LENGTH} words
-3. 2-3 crop suggestions with reasons
-4. No bold (**)
-5. Include costs, returns
-6. One follow-up question
+3. Natural, encouraging tone
+4. Include practical advice
+5. End with ONE follow-up question (not about location)
+6. No repetitive greetings
 
-Previous:
+Previous chat:
 {conversation_history}"""
-        
-        else:
-            system_prompt = f"""You are AgriAgent, expert consultant.
+            
+            elif not st.session_state.location_asked:
+                st.session_state.location_asked = True
+                system_prompt = f"""You are AgriAgent, friendly consultant.
 
-Season: {current_season}
-Need:
-- Location: {context.get('location', 'NEEDED')}
-- Soil: {context.get('soil_type', 'NEEDED')}
-- Water: {context.get('water_source', 'NEEDED')}
+Ask about location naturally ONCE.
 
 RULES:
-1. Ask MISSING info
-2. 1-2 questions only
-3. Max {MIN_RESPONSE_LENGTH} words
-4. Conversational
-5. No bold (**)
+- Ask where they're farming (state/city)
+- Max {MIN_RESPONSE_LENGTH} words
+- Conversational
+- Don't repeat if already asked
 
-Previous:
+Previous chat:
+{conversation_history}"""
+            
+            else:
+                system_prompt = f"""You are AgriAgent, friendly consultant.
+
+Location already asked. Ask about soil/water/experience naturally.
+
+RULES:
+- Ask about ONE missing thing
+- Max {MIN_RESPONSE_LENGTH} words
+- Conversational
+- NO location questions
+
+Previous chat:
 {conversation_history}"""
         
         context_parts = [system_prompt]
-        if weather_context and not is_greeting:
-            context_parts.append(f"\nWeather: {weather_context}")
+        if weather_context:
+            context_parts.append(f"\n{weather_context}")
         if image_analysis:
             context_parts.append(f"\nImage: {image_analysis}")
         
         full_context = "\n\n".join(context_parts)
         
         response = model.generate_content(
-            f"{full_context}\n\nQuery: {user_message}",
+            f"{full_context}\n\nFarmer: {user_message}",
             generation_config=genai.types.GenerationConfig(
-                max_output_tokens=200 if is_greeting else CHAT_MAX_TOKENS,
-                temperature=0.9 if is_greeting else TEMPERATURE_CHAT,
+                max_output_tokens=180 if is_greeting else CHAT_MAX_TOKENS,
+                temperature=0.9,
             )
         )
         
-        result = response.text if response and response.text else "I apologize, couldn't generate response."
+        result = response.text if response and response.text else "I apologize, couldn't respond."
         return remove_markdown_formatting(result)
     
     except Exception as e:
@@ -613,13 +776,11 @@ def display_message(role: str, content: str, images: List[Image.Image] = None):
 
 # ==================== HEADER ====================
 st.markdown("""
-<div style="position: fixed; top: 0; left: 0; right: 0; z-index: 999; 
-            background: #0f1419; padding: 16px; text-align: center; 
-            border-bottom: 1px solid #30363d;">
-    <h1 style="font-size: 1.8em; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.5px;">
-        🌾 AgriAgent
-    </h1>
-    <p style="color: #8b98a5; font-size: 0.9em; margin: 4px 0 0 0;">AI-Powered Agricultural Intelligence</p>
+<div class="app-header">
+    <div style="text-align: center;">
+        <h1>🌾 AgriAgent</h1>
+        <p>AI Agricultural Assistant</p>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -630,36 +791,30 @@ if len(st.session_state.messages) == 0:
     st.markdown("""
     <div class="welcome-message">
         <h2>👋 Welcome to AgriAgent</h2>
-        <p>Your AI-powered agricultural assistant. Ask me about crops, diseases, pests, or upload images for analysis. I can help with recommendations based on weather and season.</p>
+        <p>Your friendly AI agricultural assistant for crop advice, disease diagnosis, and farming guidance.</p>
     </div>
     """, unsafe_allow_html=True)
 else:
     display_messages = st.session_state.messages[-MAX_MESSAGES_DISPLAY:]
     for message in display_messages:
-        display_message(
-            message["role"], 
-            message["content"], 
-            message.get("images")
-        )
+        display_message(message["role"], message["content"], message.get("images"))
 
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== INPUT AREA ====================
 st.markdown('<div class="input-container"><div class="input-wrapper">', unsafe_allow_html=True)
 
-# Paperclip icon
-st.markdown('<div class="upload-btn">📎</div>', unsafe_allow_html=True)
-
-col_input, col_clear = st.columns([10, 0.6])
+col_input, col_upload, col_clear = st.columns([10, 0.7, 0.7])
 
 with col_input:
     user_input = st.text_input(
         "Message",
-        placeholder="Ask about crops, diseases, pests, or upload images...",
+        placeholder="Ask about crops, diseases, or farming advice...",
         key=f"user_input_{st.session_state.input_counter}",
         label_visibility="collapsed"
     )
-    
+
+with col_upload:
     uploaded_files = st.file_uploader(
         "Upload",
         type=SUPPORTED_IMAGE_FORMATS,
@@ -669,19 +824,21 @@ with col_input:
     )
 
 with col_clear:
-    if st.button("🗑️", help="Clear"):
+    if st.button("🗑️", help="Clear chat", key="clear_btn"):
         st.session_state.messages = []
         st.session_state.weather_data = None
         st.session_state.processed_input = None
+        st.session_state.greeting_done = False
+        st.session_state.location_asked = False
         st.session_state.context = {
             "location": None, "soil_type": None, "water_source": None,
-            "budget": None, "experience": None, "farm_size": None
+            "budget": None, "experience": None, "farm_size": None, "active_farming": True
         }
         st.session_state.input_counter += 1
         st.rerun()
 
-if uploaded_files:
-    st.markdown(f'<span class="upload-badge">📷 {len(uploaded_files)} ready</span>', unsafe_allow_html=True)
+if uploaded_files and len(uploaded_files) > 0:
+    st.markdown(f'<div class="upload-badge">📷 {len(uploaded_files)} image{"s" if len(uploaded_files) > 1 else ""} ready</div>', unsafe_allow_html=True)
 
 st.markdown('</div></div>', unsafe_allow_html=True)
 
@@ -696,10 +853,9 @@ if user_input or uploaded_files:
         if user_input:
             location = extract_location_from_query(user_input)
             if location:
-                with st.spinner("🌤️ Getting weather..."):
-                    weather_data = get_weather_data(location)
-                    if weather_data:
-                        weather_context = format_weather_context(weather_data)
+                weather_data = get_weather_data(location)
+                if weather_data:
+                    weather_context = format_weather_context(weather_data)
         
         image_analysis = ""
         image_objects = []
@@ -710,6 +866,8 @@ if user_input or uploaded_files:
                     file_size_mb = uploaded_file.size / (1024 * 1024)
                     if file_size_mb <= MAX_IMAGE_SIZE_MB:
                         image_objects.append(Image.open(uploaded_file))
+                    else:
+                        st.warning(f"⚠️ {uploaded_file.name} is too large (max {MAX_IMAGE_SIZE_MB}MB)")
                 
                 if image_objects:
                     st.session_state.messages.append({
@@ -718,12 +876,12 @@ if user_input or uploaded_files:
                         "images": image_objects.copy()
                     })
                     
-                    with st.spinner("🔍 Analyzing..."):
-                        query = user_input if user_input else "Analyze images"
+                    with st.spinner("🔍 Analyzing images..."):
+                        query = user_input if user_input else "Analyze these images"
                         image_analysis = analyze_images_with_gemini(image_objects, query)
             
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"❌ Image error: {str(e)}")
         
         elif user_input:
             st.session_state.messages.append({
@@ -731,15 +889,16 @@ if user_input or uploaded_files:
                 "content": user_input
             })
         
-        query = user_input if user_input else "Analyze uploaded images."
-        
-        with st.spinner("🤖 Thinking..."):
-            response = get_agriculture_response(query, weather_context, image_analysis)
-        
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": response
-        })
+        if user_input or image_analysis:
+            query = user_input if user_input else "Analyze the images"
+            
+            with st.spinner("💭 Thinking..."):
+                response = get_agriculture_response(query, weather_context, image_analysis)
+            
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": response
+            })
         
         st.session_state.input_counter += 1
         st.rerun()
@@ -747,40 +906,68 @@ if user_input or uploaded_files:
 # ==================== SIDEBAR ====================
 with st.sidebar:
     st.markdown("""
-    <div style="padding: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                border-radius: 14px; color: white; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 1.4em;">🌾 AgriAgent</h2>
-        <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 0.85em;">AI Assistant</p>
+    <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                border-radius: 16px; color: white; margin-bottom: 24px; text-align: center;">
+        <h2 style="margin: 0; font-size: 1.5em;">🌾 AgriAgent</h2>
+        <p style="margin: 8px 0 0 0; opacity: 0.95; font-size: 0.9em;">AI Agricultural Assistant</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("### ✨ Features")
-    st.markdown("🌱 Crop recommendations")
-    st.markdown("🐛 Disease diagnosis")
-    st.markdown("📸 Image analysis")
-    st.markdown("🌤️ Weather insights")
-    st.markdown("💬 Natural chat")
+    st.markdown("""
+    - 🌱 Crop recommendations
+    - 🐛 Disease diagnosis  
+    - 📸 Image analysis
+    - 🌤️ Weather insights
+    - 💬 Natural conversation
+    """)
+    
+    st.markdown("---")
+    
+    st.markdown("### 📊 Session Stats")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Messages", len(st.session_state.messages))
+    with col2:
+        current_season = get_indian_season()
+        st.metric("Season", current_season[:8])
     
     st.markdown("---")
     
     if st.session_state.weather_data:
         weather = st.session_state.weather_data
-        st.markdown("### 🌍 Weather")
+        st.markdown("### 🌍 Current Weather")
+        
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Temp", f"{weather['main']['temp']}°C")
-            st.metric("Humidity", f"{weather['main']['humidity']}%")
+            st.metric("🌡️ Temp", f"{weather['main']['temp']}°C")
+            st.metric("💧 Humidity", f"{weather['main']['humidity']}%")
         with col2:
-            st.metric("Wind", f"{weather['wind']['speed']} m/s")
-            st.metric("Clouds", f"{weather['clouds']['all']}%")
-        st.caption(f"📍 {weather['name']}")
+            st.metric("💨 Wind", f"{weather['wind']['speed']} m/s")
+            st.metric("☁️ Clouds", f"{weather['clouds']['all']}%")
+        
+        st.info(f"📍 Location: {weather['name']}")
         st.markdown("---")
     
-    st.markdown("### 📊 Stats")
-    st.metric("Messages", len(st.session_state.messages))
+    if st.session_state.context.get("location"):
+        st.markdown("### 👨‍🌾 Your Farm Info")
+        
+        if st.session_state.context.get("location"):
+            st.success(f"📍 **Location:** {st.session_state.context['location'].title()}")
+        
+        if st.session_state.context.get("farm_size"):
+            st.info(f"🏞️ **Farm Size:** {st.session_state.context['farm_size']}")
+        
+        if st.session_state.context.get("soil_type"):
+            soil = st.session_state.context['soil_type'][:50]
+            st.info(f"🌱 **Soil:** {soil}")
+        
+        if st.session_state.context.get("water_source"):
+            water = st.session_state.context['water_source'][:50]
+            st.info(f"💧 **Water:** {water}")
+        
+        st.markdown("---")
     
     st.markdown("---")
-    st.markdown("### 💡 Tips")
-    st.markdown("• Click 📎 to upload")
-    st.markdown("• Mention location for weather")
-    st.markdown("• Be specific about crops")
+    st.caption("🌾 Made with ❤️ for Indian farmers")
+    st.caption("💡 Tip: Click the arrow (←) to collapse sidebar")
