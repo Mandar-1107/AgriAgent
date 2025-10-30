@@ -479,9 +479,9 @@ Analyze and provide:
 1. Crop/plant identification
 2. Health condition
 3. Diseases/pests
-4. Recommendations
+4. Recommendations of crops only once.
 5. If user enters any irrelevant image content , politely decline the request
-
+6. Don't recommend anything if user is already growing a crop 
 Max {MAX_RESPONSE_LENGTH} words. Conversational."""
         
         content_parts = [prompt] + [resize_image(img) for img in images]
