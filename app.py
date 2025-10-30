@@ -479,7 +479,7 @@ Analyze and provide:
 1. Crop/plant identification
 2. Health condition
 3. Diseases/pests
-4. Recommendations
+4. Recommendations only once
 5. If user enters any irrelevant image content , politely decline the request
 
 Max {MAX_RESPONSE_LENGTH} words. Conversational."""
