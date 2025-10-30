@@ -530,7 +530,6 @@ User wants to rest soil this season.
 
 RULES:
 - Support decision (it's smart!)
-- Suggest 2-3 cover crops for soil health
 - Max {MAX_RESPONSE_LENGTH} words
 - NO questions about farming details
 - Brief and encouraging"""
