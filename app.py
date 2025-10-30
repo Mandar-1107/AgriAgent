@@ -480,7 +480,8 @@ Analyze and provide:
 2. Health condition
 3. Diseases/pests
 4. Recommendations only once
-5. If user enters any irrelevant image content , politely decline the request
+5. If user is already growing something don't recommend new crops  
+6. If user enters any irrelevant image content , politely decline the request
 
 Max {MAX_RESPONSE_LENGTH} words. Conversational."""
         
