@@ -480,6 +480,7 @@ Analyze and provide:
 2. Health condition
 3. Diseases/pests
 4. Recommendations
+5. If user enters any irrelevant image content , politely decline the request
 
 Max {MAX_RESPONSE_LENGTH} words. Conversational."""
         
@@ -519,7 +520,8 @@ RULES:
 - Give brief, helpful response (50-80 words)
 - NO questions
 - Just acknowledge and offer availability
-- Be supportive and brief"""
+- Be supportive and brief
+- If user asks any other question than agriculture help , politely decline it"""
         
         elif not context["active_farming"]:
             system_prompt = f"""You are AgriAgent.
