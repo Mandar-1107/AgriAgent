@@ -27,6 +27,7 @@ st.markdown("""
         box-sizing: border-box;
         font-family: 'Inter', sans-serif;
     }
+
     
     .main {
         background: #0f1419;
