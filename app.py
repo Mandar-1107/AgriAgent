@@ -1,12 +1,56 @@
-# app.py - AgriAgent (FINAL - All Issues Resolved)
+# app.py - AgriAgent (Optimized)
+# Standard library imports
+import os
+import re
+import tempfile
+from datetime import datetime
+from typing import Optional, Dict, Any, List
+
+# Third-party imports
 import streamlit as st
 import google.generativeai as genai
 import requests
-from datetime import datetime
 from PIL import Image
-from typing import Optional, Dict, Any, List
-import re
+
+# Local imports
 from config import *
+
+# ==================== MODULE-LEVEL CONSTANTS ====================
+# Location Keywords
+LOCATION_KEYWORDS = [
+    # Maharashtra
+    "mumbai", "pune", "nagpur", "nashik", "aurangabad", "solapur", "kolhapur",
+    "thane", "amravati", "jalgaon", "satara", "nanded", "akola", "latur", "ahmednagar",
+    # States
+    "maharashtra", "punjab", "karnataka", "gujarat", "rajasthan", "tamil nadu",
+    "uttar pradesh", "madhya pradesh", "west bengal", "telangana", "kerala",
+    # Major Cities
+    "delhi", "bangalore", "hyderabad", "chennai", "kolkata", "ahmedabad", "surat",
+    "jaipur", "lucknow", "indore", "bhopal", "chandigarh", "patna"
+]
+
+COMMON_CROPS = [
+    "orange", "wheat", "rice", "paddy", "cotton", "soybean", "sugarcane",
+    "maize", "corn", "onion", "potato", "tomato", "chickpea", "gram",
+    "mustard", "groundnut", "turmeric", "ginger", "banana", "mango", "grape", "pomegranate"
+]
+
+GREETING_PHRASES = ['hi', 'hello', 'hey', 'namaste', 'good morning', 'good evening']
+CASUAL_PHRASES = ['how are you', 'what is your name', 'who are you']
+
+CITIES_LIST = [
+    "mumbai", "pune", "nagpur", "nashik", "aurangabad", "solapur", "amravati", "kolhapur",
+    "thane", "jalgaon", "satara", "nanded", "akola", "latur", "ahmednagar",
+    "delhi", "bangalore", "hyderabad", "chennai", "kolkata", "ahmedabad", "surat",
+    "jaipur", "lucknow", "indore", "bhopal", "chandigarh", "patna", "vadodara", "coimbatore"
+]
+
+STATES_TO_CITIES = {
+    "maharashtra": "mumbai", "punjab": "chandigarh", "karnataka": "bangalore",
+    "gujarat": "ahmedabad", "rajasthan": "jaipur", "madhya pradesh": "bhopal",
+    "uttar pradesh": "lucknow", "tamil nadu": "chennai", "west bengal": "kolkata",
+    "telangana": "hyderabad", "andhra pradesh": "visakhapatnam", "kerala": "kochi"
+}
 
 # ==================== PAGE CONFIGURATION ====================
 st.set_page_config(
@@ -279,33 +323,28 @@ st.markdown("""
 
 # ==================== SESSION STATE ====================
 def initialize_session_state():
-    defaults = {
-        "messages": [],
-        "weather_data": None,
-        "weather_cache_time": None,
-        "last_location": None,
-        "processed_input": None,
-        "input_counter": 0,
-        "greeting_done": False,
-        "location_asked": False,
-        "user_declined_help": False,
-        "current_mode": "neutral",  # neutral, advisory, support
-        "context": {
-            "location": None,
-            "soil_type": None,
-            "water_source": None,
-            "budget": None,
-            "experience": None,
-            "farm_size": None,
-            "active_farming": True,
-            "current_crop": None,
-            "crop_stage": None
-        }
-    }
-    
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
+    """Initialize session state with default values using setdefault for efficiency."""
+    st.session_state.setdefault("messages", [])
+    st.session_state.setdefault("weather_data", None)
+    st.session_state.setdefault("weather_cache_time", None)
+    st.session_state.setdefault("last_location", None)
+    st.session_state.setdefault("processed_input", None)
+    st.session_state.setdefault("input_counter", 0)
+    st.session_state.setdefault("greeting_done", False)
+    st.session_state.setdefault("location_asked", False)
+    st.session_state.setdefault("user_declined_help", False)
+    st.session_state.setdefault("current_mode", "neutral")
+    st.session_state.setdefault("context", {
+        "location": None,
+        "soil_type": None,
+        "water_source": None,
+        "budget": None,
+        "experience": None,
+        "farm_size": None,
+        "active_farming": True,
+        "current_crop": None,
+        "crop_stage": None
+    })
 
 initialize_session_state()
 
@@ -324,117 +363,104 @@ def configure_gemini():
 configure_gemini()
 
 # ==================== HELPER FUNCTIONS ====================
+@st.cache_data(ttl=3600)
 def get_indian_season() -> str:
+    """Get current Indian agricultural season. Cached for 1 hour."""
     month = datetime.now().month
     for season, months in INDIAN_SEASONS.items():
         if month in months:
             return season
     return "Transition Period"
 
-def extract_context_from_history():
+def extract_context_from_history() -> Dict[str, Any]:
+    """Extract farming context from conversation history.
+    
+    Analyzes message history to identify location, crops, mode, and other details.
+    Optimized to use last 20 messages only for performance.
+    """
     context = st.session_state.context.copy()
     
-    for msg in st.session_state.messages:
-        if msg["role"] == "user":
-            content_lower = msg["content"].lower()
+    # Limit to last 20 messages for performance
+    recent_messages = st.session_state.messages[-20:] if len(st.session_state.messages) > 20 else st.session_state.messages
+    
+    for msg in recent_messages:
+        if msg["role"] != "user":
+            continue
             
-            # 1. Check for explicit rejection
-            if any(phrase in content_lower for phrase in ["no", "dont want", "don't want", "not interested", "stop asking"]):
-                st.session_state.user_declined_help = True
-            
-            # 2. Check for resting soil (Fallow)
-            if any(phrase in content_lower for phrase in ["not growing", "giving time", "break", "replenish", "rest"]):
-                context["active_farming"] = False
-                st.session_state.current_mode = "support"
-            
-            # 3. Extract Location (Expanded List)
-            location_keywords = [
-                # Maharashtra
-                "mumbai", "pune", "nagpur", "nashik", "aurangabad", "solapur", "kolhapur", 
-                "thane", "amravati", "jalgaon", "satara", "nanded", "akola", "latur", "ahmednagar",
-                # States
-                "maharashtra", "punjab", "karnataka", "gujarat", "rajasthan", "tamil nadu",
-                "uttar pradesh", "madhya pradesh", "west bengal", "telangana", "kerala",
-                # Major Cities
-                "delhi", "bangalore", "hyderabad", "chennai", "kolkata", "ahmedabad", "surat", 
-                "jaipur", "lucknow", "indore", "bhopal", "chandigarh", "patna"
-            ]
-            
-            if not context["location"]:
-                for keyword in location_keywords:
-                    if keyword in content_lower:
-                        context["location"] = keyword.title()
-                        break
-            
-            # 4. Extract Crop (Critical for Context Awareness)
-            common_crops = ["orange", "wheat", "rice", "paddy", "cotton", "soybean", "sugarcane", 
-                          "maize", "corn", "onion", "potato", "tomato", "chickpea", "gram", 
-                          "mustard", "groundnut", "turmeric", "ginger", "banana", "mango", "grape", "pomegranate"]
-            
-            for crop in common_crops:
+        content_lower = msg["content"].lower()
+        
+        # 1. Check for explicit rejection
+        if any(phrase in content_lower for phrase in ["no", "dont want", "don't want", "not interested", "stop asking"]):
+            st.session_state.user_declined_help = True
+        
+        # 2. Check for resting soil
+        if any(phrase in content_lower for phrase in ["not growing", "giving time", "break", "replenish", "rest"]):
+            context["active_farming"] = False
+            st.session_state.current_mode = "support"
+        
+        # 3. Extract Location (using module constant)
+        if not context["location"]:
+            for keyword in LOCATION_KEYWORDS:
+                if keyword in content_lower:
+                    context["location"] = keyword.title()
+                    break
+        
+        # 4. Extract Crop (using module constant)
+        if not context["current_crop"]:
+            for crop in COMMON_CROPS:
                 if crop in content_lower:
                     context["current_crop"] = crop.title()
-                    st.session_state.current_mode = "support" # Switch to support mode if crop mentioned
+                    st.session_state.current_mode = "support"
                     break
-
-            # 5. Detect Mode based on intent
-            if any(word in content_lower for word in ["suggest", "recommend", "what to grow", "best crop", "profitable"]):
-                st.session_state.current_mode = "advisory"
-            
-            # 6. Other details
-            if not context["soil_type"] and any(word in content_lower for word in ["clay", "sand", "loam", "soil"]):
-                context["soil_type"] = content_lower
-            
-            if not context["water_source"] and any(word in content_lower for word in ["rain", "irrigation", "well", "borewell"]):
-                context["water_source"] = content_lower
-            
-            if not context["farm_size"] and any(word in content_lower for word in ["acre", "hectare"]):
-                numbers = re.findall(r'\d+', content_lower)
-                if numbers:
-                    context["farm_size"] = f"{numbers[0]} acres"
+        
+        # 5. Detect Mode based on intent
+        if any(word in content_lower for word in ["suggest", "recommend", "what to grow", "best crop", "profitable"]):
+            st.session_state.current_mode = "advisory"
+        
+        # 6. Extract other details
+        if not context["soil_type"] and any(word in content_lower for word in ["clay", "sand", "loam", "soil"]):
+            context["soil_type"] = content_lower
+        
+        if not context["water_source"] and any(word in content_lower for word in ["rain", "irrigation", "well", "borewell"]):
+            context["water_source"] = content_lower
+        
+        if not context["farm_size"] and any(word in content_lower for word in ["acre", "hectare"]):
+            numbers = re.findall(r'\d+', content_lower)
+            if numbers:
+                context["farm_size"] = f"{numbers[0]} acres"
     
     st.session_state.context = context
     return context
 
 def is_simple_greeting(message: str) -> bool:
-    greetings = ['hi', 'hello', 'hey', 'namaste', 'good morning', 'good evening']
-    casual = ['how are you', 'what is your name', 'who are you']
-    
+    """Check if message is a simple greeting."""
     message_lower = message.lower().strip()
-    if message_lower in greetings: return True
-    for phrase in casual:
-        if phrase in message_lower and len(message_lower) < 25: return True
+    if message_lower in GREETING_PHRASES:
+        return True
+    for phrase in CASUAL_PHRASES:
+        if phrase in message_lower and len(message_lower) < 25:
+            return True
     return False
 
 def remove_markdown_formatting(text: str) -> str:
-    """Safe string replacement to remove markdown"""
-    text = text.replace('**', '')
-    text = text.replace('*', '')
-    text = text.replace('_', '')
-    text = text.replace('#', '')
-    return text
+    """Remove markdown formatting from text."""
+    return text.replace('**', '').replace('*', '').replace('_', '').replace('#', '')
 
+@st.cache_data(ttl=86400)  # Cache for 24 hours
 def extract_location_from_query(query: str) -> Optional[str]:
-    """Expanded location extraction"""
-    cities = [
-        "mumbai", "pune", "nagpur", "nashik", "aurangabad", "solapur", "amravati", "kolhapur", 
-        "thane", "jalgaon", "satara", "nanded", "akola", "latur", "ahmednagar",
-        "delhi", "bangalore", "hyderabad", "chennai", "kolkata", "ahmedabad", "surat", 
-        "jaipur", "lucknow", "indore", "bhopal", "chandigarh", "patna", "vadodara", "coimbatore"
-    ]
-    
-    states_to_cities = {
-        "maharashtra": "mumbai", "punjab": "chandigarh", "karnataka": "bangalore",
-        "gujarat": "ahmedabad", "rajasthan": "jaipur", "madhya pradesh": "bhopal",
-        "uttar pradesh": "lucknow", "tamil nadu": "chennai", "west bengal": "kolkata",
-        "telangana": "hyderabad", "andhra pradesh": "visakhapatnam", "kerala": "kochi"
-    }
-    
+    """Extract location from query string. Uses module-level constants and caching."""
     query_lower = query.lower()
-    for city in cities:
-        if city in query_lower: return city.title()
-    for state, capital in states_to_cities.items():
-        if state in query_lower: return capital.title()
+    
+    # Check cities first
+    for city in CITIES_LIST:
+        if city in query_lower:
+            return city.title()
+    
+    # Check states
+    for state, capital in STATES_TO_CITIES.items():
+        if state in query_lower:
+            return capital.title()
+    
     return None
 
 def get_weather_data(location: str) -> Optional[Dict[str, Any]]:
@@ -683,11 +709,17 @@ else:
 st.markdown('</div>', unsafe_allow_html=True)
 
 def process_audio_input(audio_file) -> str:
-    """Process audio input using Gemini"""
+    """Process audio input using Gemini for transcription/translation.
+    
+    Args:
+        audio_file: Audio file object from Streamlit
+        
+    Returns:
+        Transcribed/translated text or error message
+    """
     try:
         model = genai.GenerativeModel(GEMINI_MODEL)
         
-        # Create a prompt for transcription/translation
         prompt = """
         Listen to this audio. 
         1. Transcribe it exactly as spoken.
@@ -695,30 +727,19 @@ def process_audio_input(audio_file) -> str:
         3. Return ONLY the English translation (or transcription if already English).
         """
         
-        # Create a temporary file for the audio
-        # Note: In a real deployment we might handle bytes directly if supported, 
-        # but saving to temp is safer for API compatibility
-        import tempfile
-        import os
-        
+        # Save to temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
             tmp_file.write(audio_file.read())
             tmp_path = tmp_file.name
-            
-        # Upload to Gemini (using File API if needed, or passing data if supported by SDK version)
-        # For simplicity with current SDK, we'll try to use the file API or direct content
-        # Assuming genai.upload_file is available or we pass the file object
         
-        # Since we can't easily check SDK version capabilities at runtime without docs,
-        # we'll use the standard file upload approach which is robust
-        uploaded_file = genai.upload_file(tmp_path)
-        
-        response = model.generate_content([prompt, uploaded_file])
-        
-        # Cleanup
-        os.unlink(tmp_path)
-        
-        return response.text.strip()
+        try:
+            # Upload and process with Gemini
+            uploaded_file = genai.upload_file(tmp_path)
+            response = model.generate_content([prompt, uploaded_file])
+            return response.text.strip()
+        finally:
+            # Always cleanup temp file
+            os.unlink(tmp_path)
         
     except Exception as e:
         return f"Error processing audio: {str(e)}"
